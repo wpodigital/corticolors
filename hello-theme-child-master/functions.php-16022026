@@ -1,0 +1,352 @@
+<?php
+/**
+ * Theme functions and definitions.
+ *
+ * For additional information on potential customization options,
+ * read the developers' documentation:
+ *
+ * https://developers.elementor.com/docs/hello-elementor-theme/
+ *
+ * @package HelloElementorChild
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+define( 'HELLO_ELEMENTOR_CHILD_VERSION', '2.0.0' );
+
+/**
+ * Load child theme scripts & styles.
+ *
+ * @return void
+ */
+function hello_elementor_child_scripts_styles() {
+
+	wp_enqueue_style(
+		'hello-elementor-child-style',
+		get_stylesheet_directory_uri() . '/style.css',
+		[
+			'hello-elementor-theme-style',
+		],
+		HELLO_ELEMENTOR_CHILD_VERSION
+	);
+
+}
+add_action( 'wp_enqueue_scripts', 'hello_elementor_child_scripts_styles', 20 );
+
+/**
+* Quitar productos relacionados en WooCommerce
+*/
+remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );
+
+/*Detalles cliente Pagina gracias*/
+add_action( 'woocommerce_thankyou', 'adding_customers_details_to_thankyou', 10, 1 );
+function adding_customers_details_to_thankyou( $order_id ) {
+    // Only for non logged in users
+    if ( ! $order_id || is_user_logged_in() ) return;
+
+    $order = wc_get_order($order_id); // Get an instance of the WC_Order object
+
+    wc_get_template( 'order/order-details-customer.php', array('order' => $order ));
+}
+
+/*Pedidos contrarembolso en espera*/
+function wooc_cod_status( $status ) {
+return 'on-hold';
+}
+add_filter( 'woocommerce_cod_process_payment_order_status', 'wooc_cod_status', 15 );
+
+
+#/Comentarios blog span
+add_filter( 'comment_form_defaults', 'custom_reply_title' );
+function custom_reply_title( $defaults ){
+$defaults['title_reply_before'] = '<span id="reply-title" class="comment-reply-title">';
+$defaults['title_reply_after'] = '</span>';
+return $defaults;
+}
+
+#/Descripción corta productos
+  add_action('wp', 'ocultar_descripcion_corta_producto');
+function ocultar_descripcion_corta_producto() {
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_excerpt', 20);
+}
+
+#/ Quitar "tienda" migas de pan Yoast Seo
+function wpseo_remove_store_breadcrumb($links) {
+    $store_url = home_url('/tienda/'); // Reemplaza '/tienda/' con la URL real de tu tienda
+    foreach ($links as $key => $link) {
+        if (isset($link['url']) && $link['url'] == $store_url) {
+            unset($links[$key]);
+        }
+    }
+    return $links;
+}
+add_filter('wpseo_breadcrumb_links', 'wpseo_remove_store_breadcrumb');
+
+// Función para reemplazar las migas de pan de WooCommerce por las de Yoast SEO
+function reemplazar_migas_de_pan() {
+    if ( function_exists('yoast_breadcrumb') ) {
+        yoast_breadcrumb('<nav id="breadcrumbs">','</p>');
+    }
+}
+
+// Reemplazar las migas de pan de WooCommerce por las de Yoast SEO
+remove_action('woocommerce_before_main_content', 'woocommerce_breadcrumb', 20);
+add_action('woocommerce_before_main_content', 'reemplazar_migas_de_pan', 20);
+
+// Ocultar otros métodos de envío cuando el envío gratuito está disponible.
+function my_hide_shipping_when_free_is_available( $rates ) {
+$free = array();
+foreach ( $rates as $rate_id => $rate ) {
+if ( 'free_shipping' === $rate->method_id ) {
+$free[ $rate_id ] = $rate;
+break;
+}
+}
+return ! empty( $free ) ? $free : $rates;
+}
+add_filter( 'woocommerce_package_rates', 'my_hide_shipping_when_free_is_available', 100 );
+
+// Combiar metadesripción hellow elementor y Yoast
+// Creamos la función
+function eliminar_meta_sobrante() {
+// Eliminamos esa molesta metadesc
+remove_action( 'wp_head', 'hello_elementor_add_description_meta_tag' );
+}
+// llamamos a la función declarada
+add_action( 'after_setup_theme', 'eliminar_meta_sobrante' );
+
+/* Remove the default WooCommerce 3 JSON/LD structured data */
+function remove_output_structured_data() {
+remove_action( 'wp_footer', array( WC()->structured_data, 'output_structured_data' ), 10 ); // This removes structured data from all frontend pages
+}
+add_action( 'init', 'remove_output_structured_data' );
+
+// Ocultamos otras formas de envío excepto la recogida en tienda si hay disponible envío gratuito.
+
+add_filter( 'woocommerce_package_rates', 'esl_hide_shipping_when_free_is_available', 10, 2 );
+
+function esl_hide_shipping_when_free_is_available( $rates, $package ) {
+	$new_rates = array();
+	foreach ( $rates as $rate_id => $rate ) { 
+		if ( 'free_shipping' === $rate->method_id ) {
+			$new_rates[ $rate_id ] = $rate;
+			break;
+		}
+	}
+
+	if ( ! empty( $new_rates ) ) { 
+		foreach ( $rates as $rate_id => $rate ) {
+			if ('local_pickup' === $rate->method_id ) {
+				$new_rates[ $rate_id ] = $rate;
+				break;
+			}
+		}
+		return $new_rates;
+	}
+
+	return $rates;
+}
+
+// // Valoraciones de producto schema pro
+add_filter( 'wp_schema_pro_add_woocommerce_review', '__return_true' );
+
+// Quitar sku de la página del producto
+add_filter( 'wc_product_sku_enabled', '__return_false' );
+
+
+
+	add_action('woocommerce_product_meta_start', function () {
+		ob_start();
+	}, 55);
+
+	add_action('woocommerce_product_meta_end', function () {
+		$html = ob_get_clean();
+		$html = preg_replace('<span class="posted_in">.*<\/span>', '', $html);
+		echo $html;
+	}, 55);
+
+// Añadir canonical solo en URLs con ?ivrating=
+add_action('wp_head', function () {
+    if (isset($_GET['ivrating'])) {
+        // Obtener la URL sin parámetros
+        $canonical_url = strtok(get_permalink(), '?');
+        echo '<link rel="canonical" href="' . esc_url($canonical_url) . '">' . "\n";
+    }
+});
+
+// Añadir noindex y canonical a feeds (RSS, Atom)
+add_action('wp_head', function () {
+    if (is_feed()) {
+        global $post;
+
+        // Sacar la URL original del contenido
+        if (isset($post->ID)) {
+            $canonical = get_permalink($post->ID);
+        } else {
+            $canonical = home_url();
+        }
+
+        echo '<meta name="robots" content="noindex, follow">' . "\n";
+        echo '<link rel="canonical" href="' . esc_url($canonical) . '">' . "\n";
+    }
+});
+
+
+
+
+// AUTOR INFORMACION
+add_shortcode('autor_rol', function () {
+    $author_id = get_the_author_meta('ID');
+    if (!$author_id) return '';
+
+    $user = get_user_by('id', $author_id);
+    if (!$user || empty($user->roles)) return '';
+
+    $role_key = $user->roles[0]; // primer rol
+
+    // nombre legible del rol
+    $wp_roles = wp_roles();
+    $role_name = $wp_roles->roles[$role_key]['name'] ?? $role_key;
+
+    return esc_html($role_name);
+});
+
+
+add_shortcode('autor_redes', function () {
+
+    $author_id = get_the_author_meta('ID');
+    if (!$author_id) return '';
+
+    // Claves de WordPress → Icono → URL base (si aplica)
+    $redes = [
+        'facebook'   => ['icon' => 'fab fa-facebook-f', 'prefix' => 'https://'],
+        'instagram'  => ['icon' => 'fab fa-instagram',  'prefix' => 'https://'],
+        'linkedin'   => ['icon' => 'fab fa-linkedin-in','prefix' => 'https://'],
+        'youtube'    => ['icon' => 'fab fa-youtube',    'prefix' => 'https://'],
+        'twitter'    => ['icon' => 'fab fa-twitter',    'prefix' => 'https://'],
+        'pinterest'  => ['icon' => 'fab fa-pinterest-p','prefix' => 'https://'],
+        'soundcloud' => ['icon' => 'fab fa-soundcloud', 'prefix' => 'https://'],
+        'tumblr'     => ['icon' => 'fab fa-tumblr',     'prefix' => 'https://'],
+        'user_url'   => ['icon' => 'fas fa-globe',      'prefix' => '']
+    ];
+
+    $html = '<div class="autor-redes" style="display:flex;gap:10px;align-items:center;">';
+
+    foreach ($redes as $key => $data) {
+
+        // Obtener valor del campo del autor
+        if ($key === 'user_url') {
+            $url = get_the_author_meta('user_url', $author_id);
+        } else {
+            $url = get_user_meta($author_id, $key, true);
+
+            // fallback por si el theme usa otro nombre
+            if (!$url) {
+                $url = get_user_meta($author_id, 'contactmethod_'.$key, true);
+            }
+        }
+
+        if (!$url) continue; // Si no hay red, no muestra icono
+
+        // Asegurar https si el usuario no lo escribió
+        if ($data['prefix'] && !preg_match('~^https?://~i', $url)) {
+            $url = $data['prefix'] . ltrim($url, '/');
+        }
+
+        $html .= sprintf(
+            '<a href="%s" target="_blank" rel="nofollow noopener" style="text-decoration:none;">
+                <i class="%s" style="font-size:18px;"></i>
+            </a>',
+            esc_url($url),
+            esc_attr($data['icon'])
+        );
+    }
+
+    $html .= '</div>';
+
+    return $html;
+});
+
+
+
+
+/**
+ * [autores_blog columns="4" role_label="1" only_roles="author,editor,administrator"]
+ * Muestra usuarios que tengan posts publicados.
+ */
+add_shortcode('autores_blog', function($atts){
+
+    $atts = shortcode_atts([
+        'columns' => 4,
+        'only_roles' => '',     // opcional: filtrar roles (csv)
+        'role_label' => 1,      // 1=mostrar nombre del rol, 0=ocultar
+        'avatar_size' => 160,
+    ], $atts);
+
+    $only_roles = array_filter(array_map('trim', explode(',', $atts['only_roles'])));
+
+    // Obtener usuarios (limitamos a quienes tengan al menos 1 post)
+    $users = get_users([
+        'fields' => ['ID','display_name'],
+        'orderby' => 'display_name',
+        'order' => 'ASC'
+    ]);
+
+    if (empty($users)) return '';
+
+    $cols = max(1, min(6, (int)$atts['columns']));
+
+    $html = '<div class="autores-grid" style="display:grid;gap:24px;grid-template-columns:repeat('.$cols.',minmax(0,1fr));">';
+
+    foreach ($users as $u){
+
+        $user = get_user_by('id', $u->ID);
+        if (!$user) continue;
+
+        // Filtrar por roles si se pide
+        if (!empty($only_roles)) {
+            $has = false;
+            foreach ((array)$user->roles as $r) {
+                if (in_array($r, $only_roles, true)) { $has = true; break; }
+            }
+            if (!$has) continue;
+        }
+
+        // Contar posts publicados por autor
+        $count = count_user_posts($u->ID, 'post', true); // true = solo publicados
+        if ($count < 1) continue; // SOLO autores con blogs
+
+        $author_url  = get_author_posts_url($u->ID);
+        $avatar      = get_avatar($u->ID, (int)$atts['avatar_size']);
+        $name        = esc_html($user->display_name);
+
+        // Rol legible
+        $role_name = '';
+        if ((int)$atts['role_label'] === 1 && !empty($user->roles)) {
+            $role_key = $user->roles[0];
+            $wp_roles = wp_roles();
+            $role_name = $wp_roles->roles[$role_key]['name'] ?? $role_key;
+        }
+
+        $html .= '<div class="autor-card">';
+
+        $html .= '<a href="'.esc_url($author_url).'" class="urlautor">';
+        $html .= '<div class="avatarautor">'.$avatar.'</div>';
+        $html .= '<div class="nombreautor">'.$name.'</div>';
+
+        if ($role_name) {
+            $html .= '<div style="opacity:.85;margin-top:6px;" class="rolautor">'.esc_html($role_name).'</div>';
+        }
+
+        $html .= '<div class="contadorautor"">'.$count.' artículos</div>';
+        $html .= '</a>';
+
+        $html .= '</div>';
+    }
+
+    $html .= '</div>';
+
+    return $html;
+});

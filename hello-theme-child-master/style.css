@@ -1,0 +1,74 @@
+/* 
+Theme Name: Hello Elementor Child
+Theme URI: https://github.com/elementor/hello-theme-child/
+Description: Hello Elementor Child is a child theme of Hello Elementor, created by Elementor team
+Author: Elementor Team
+Author URI: https://elementor.com/
+Template: hello-elementor
+Version: 2.0.1
+Text Domain: hello-elementor-child
+License: GNU General Public License v3 or later.
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
+Tags: flexible-header, custom-colors, custom-menu, custom-logo, editor-style, featured-images, rtl-language-support, threaded-comments, translation-ready
+*/
+
+/* Add your custom styles here */
+
+/* ============================================================
+   CWV — CLS: Reserve space for images to prevent layout shifts
+   ============================================================ */
+
+/* WooCommerce product gallery images: fix aspect ratio to prevent CLS.
+   Only target img elements — NOT the container divs — to avoid
+   breaking the 2-column product layout (gallery + summary). */
+.woocommerce-product-gallery__image img,
+.woocommerce-product-gallery .flex-viewport img {
+	aspect-ratio: 1 / 1;
+	width: 100%;
+	height: auto;
+	object-fit: contain;
+}
+
+/* WooCommerce product gallery thumbnails */
+.woocommerce-product-gallery__image--placeholder,
+.woocommerce-product-gallery .flex-viewport {
+	min-height: 200px;
+}
+
+/* Elementor image widgets: prevent height-less images causing CLS */
+.elementor-widget-image img,
+.elementor-widget-image-box img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+/* WooCommerce product loop images */
+.woocommerce ul.products li.product a img,
+.woocommerce-loop-product__link img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+}
+
+/* Elementor section/column background images — reserve space on mobile */
+@media (max-width: 767px) {
+	.elementor-section.elementor-section-height-default .elementor-container {
+		min-height: 200px;
+	}
+}
+
+/* ============================================================
+   CWV — CLS: Font display swap for self-hosted fonts (if any)
+   Add font-display: swap to each @font-face declaration below.
+   ============================================================ */
+
+.cr-review-card .top-row {
+    border: 0 !important;
+    border-bottom: 1px solid #ebebeb !important;
+    border-radius: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
