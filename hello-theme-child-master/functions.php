@@ -165,18 +165,10 @@ function cwv_preconnect_and_preload() {
 	}
 
 	// Map of slug => hero image URL.
-	// These are placeholder paths; replace with actual image URLs from the media library.
+	// Solo se precargan imágenes que son realmente el LCP (según informes Lighthouse). El logo NO es el LCP.
 	$hero_images = [
 		''                                                      => 'https://corticolors.com/wp-content/uploads/imagenes-decorativas/corticolors-tienda-de-estores-en-valencia-online.jpeg',
-		'estores-enrollables-screen-a-medida'                   => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'estores-motorizados'                                    => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'estores-sin-taladrar'                                   => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'mecanismos-para-estores'                                => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'estores-exterior'                                       => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'estores-termicos'                                       => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
 		'mecanismo-para-estores-con-cadena-paqueto-plegable'     => 'https://corticolors.com/wp-content/uploads/mecanismos-estores/mecanismo-estores-cadena-corticolors.jpg',
-		'estores-enrollables-a-medida'                           => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
-		'estores-salon'                                          => 'https://corticolors.com/wp-content/uploads/logo/logo-corticolors.png',
 	];
 
 	$current_slug = '';
@@ -861,4 +853,4 @@ html.cc-no-smooth body {
 })( window.jQuery );
 </script>
 	<?php
-}
+}
