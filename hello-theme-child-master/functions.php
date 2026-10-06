@@ -164,6 +164,17 @@ function cwv_preconnect_and_preload() {
 		return;
 	}
 
+	// Precarga de Poppins (fuente del h1) para reducir el CLS/LCP por cambio de fuente.
+	// Rutas generadas por WP Rocket (Optimize Google Fonts, alojamiento local). Si WP Rocket
+	// regenera la caché de fuentes y cambian, actualizar estas URLs desde la pestaña Red.
+	$poppins_fonts = [
+		'https://corticolors.com/wp-content/cache/fonts/1/google-fonts/fonts/s/poppins/v24/pxiEyp8kv8JHgFVrJJfecg.woff2',
+		'https://corticolors.com/wp-content/cache/fonts/1/google-fonts/fonts/s/poppins/v24/pxiByp8kv8JHgFVrLGT9Z1xlFQ.woff2',
+	];
+	foreach ( $poppins_fonts as $font_url ) {
+		echo '<link rel="preload" as="font" type="font/woff2" href="' . esc_url( $font_url ) . '" crossorigin>' . "\n";
+	}
+
 	// Map of slug => hero image URL.
 	// Solo se precargan imágenes que son realmente el LCP (según informes Lighthouse). El logo NO es el LCP.
 	$hero_images = [
